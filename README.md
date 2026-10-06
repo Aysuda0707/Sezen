@@ -19,7 +19,26 @@ emoji result.
 
 - React + TypeScript + Vite
 - Tailwind CSS
-- Static build (no backend) — deployable to Vercel
+- Static build (no backend) — deployed to Vercel
+
+## How the audio works
+
+No audio files are bundled with this project. At runtime the app queries the
+**public iTunes Search API** for each song and streams Apple's 30-second
+preview from Apple's CDN. The game plays a growing segment (1s → 6s) starting
+from the offset defined in `previewStart` for each song.
+
+- Lookup + caching: [`src/lib/itunes.ts`](src/lib/itunes.ts)
+- Player: [`src/hooks/useClipPlayer.ts`](src/hooks/useClipPlayer.ts)
+- Catalog (title, album, year, previewStart): [`src/data/songs.ts`](src/data/songs.ts)
+
+> ⚠️ **Copyright:** Apple's preview clips are copyrighted. This project is for
+> **private / educational** use only. Do not redistribute the audio or present
+> it as your own. If you deploy publicly, consider enabling Vercel's
+> Deployment Protection (see below).
+
+If a preview cannot be found, the app shows a friendly message instead of
+crashing.
 
 ## Local development
 
@@ -37,57 +56,19 @@ npm run build
 npm run preview
 ```
 
-## Adding the audio clips
-
-The app expects one pre-cut clip per song at:
-
-```
-public/clips/<song-id>.mp3
-```
-
-The `<song-id>` values are defined in [`src/data/songs.ts`](src/data/songs.ts).
-For example `kutlama.mp3`, `hadi-bakalim.mp3`, `sen-aglama.mp3`.
-
-### How to source and cut clips (private / educational use only)
-
-> ⚠️ **Copyright:** Sezen Aksu's recordings are owned by her label. Only do
-> this for a **private, non-public, educational** project. Do not publicly
-> distribute the audio. Consider keeping the Vercel deployment password
-> protected (see below).
-
-1. Obtain the source audio **legally** for your own private use (e.g. a CD or
-   a licensed download you own).
-2. Install [ffmpeg](https://ffmpeg.org/download.html) (on Windows:
-   `winget install Gyan.FFmpeg`).
-3. Cut a 6-second clip starting at the offset listed in `clipStart`:
-
-   ```bash
-   ffmpeg -ss 45 -i "kutlama-source.mp3" -t 6 -c copy public/clips/kutlama.mp3
-   ```
-
-   - `-ss 45` = start at 45 seconds (use the song's `clipStart`)
-   - `-t 6` = 6 seconds long
-   - `-c copy` = no re-encode (fast, lossless)
-
-4. Repeat for each song. The game reveals 1s → 6s from the **start** of each
-   clip, so make sure the first second is recognisable.
-
-If a clip is missing, the app shows a friendly "Klip dosyası bulunamadı"
-message instead of crashing.
-
 ## Project structure
 
 ```
 src/
-  data/songs.ts        # song catalog (id, title, album, year, clipStart)
-  lib/text.ts          # Turkish-aware normalisation + fuzzy matching
-  lib/game.ts          # song selection, feedback rules, stats, share grid
-  lib/storage.ts       # localStorage persistence
-  hooks/useGame.ts     # round state machine
+  data/songs.ts          # song catalog (id, title, album, year, previewStart)
+  lib/text.ts            # Turkish-aware normalisation + fuzzy matching
+  lib/game.ts            # song selection, feedback rules, stats, share grid
+  lib/itunes.ts          # iTunes preview lookup + caching
+  lib/storage.ts         # localStorage persistence
+  hooks/useGame.ts       # round state machine
   hooks/useClipPlayer.ts # cumulative-reveal audio player
-  components/          # GuessInput, GuessList, StatsPanel, ShareButton
-  App.tsx              # layout + mode switching
-public/clips/          # <song-id>.mp3 files (not committed)
+  components/            # GuessInput, GuessList, StatsPanel, ShareButton
+  App.tsx                # layout + mode switching
 ```
 
 ## Deploying to Vercel (step by step)
@@ -116,21 +97,19 @@ git config --global user.email "you@example.com"
 ### 3. Create the GitHub repository
 
 1. Go to https://github.com/new
-2. Repository name: `sezen`
-3. Keep it **Private** (recommended, because of the audio).
+2. Repository name: `Sezen`
+3. Keep it **Private** (recommended).
 4. Do **not** initialise with a README.
-5. Click **Create repository** and copy the repo URL.
+5. Click **Create repository**.
 
 ### 4. Push the project
-
-From the project folder:
 
 ```bash
 git init
 git add .
 git commit -m "Initial commit: Sezen Aksu song guessing game"
 git branch -M main
-git remote add origin https://github.com/<your-username>/sezen.git
+git remote add origin https://github.com/<your-username>/Sezen.git
 git push -u origin main
 ```
 
@@ -142,12 +121,15 @@ git push -u origin main
 ### 6. Import and deploy
 
 1. On the Vercel dashboard click **Add New… → Project**.
-2. Select your `sezen` repository and click **Import**.
-3. Vercel auto-detects Vite. Confirm:
+2. If `Sezen` is not listed, click **Adjust GitHub App Permissions** and grant
+   Vercel access to the repository (or go to
+   https://github.com/settings/installations → Vercel → Configure).
+3. Select `Sezen` and click **Import**.
+4. Confirm:
    - Framework Preset: **Vite**
    - Build Command: `npm run build`
    - Output Directory: `dist`
-4. Click **Deploy**. After a minute you get a live URL.
+5. Click **Deploy**.
 
 ### 7. Automatic redeploys
 
@@ -160,8 +142,6 @@ git push
 ```
 
 ### 8. (Optional) Password-protect the site
-
-Because the audio is copyrighted, you can restrict access:
 
 1. Vercel project → **Settings → Deployment Protection**.
 2. Enable **Vercel Authentication** (or Password Protection on paid plans).

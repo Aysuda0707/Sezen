@@ -1,24 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { clipUrl } from '../lib/game';
+import { SONG_BY_ID } from '../data/songs';
+import { getPreviewUrl } from '../lib/itunes';
 
 interface UseClipPlayerResult {
   isPlaying: boolean;
-  /** Play the clip from the start for `seconds` seconds. */
+  isLoading: boolean;
+  /** Play the clip from the song's start offset for `seconds` seconds. */
   play: (songId: string, seconds: number) => void;
   stop: () => void;
-  /** True when the clip file could not be loaded (missing asset). */
-  missing: boolean;
+  /** True when no preview could be resolved for the song. */
+  unavailable: boolean;
 }
 
 /**
- * Plays a pre-cut clip from its beginning for a given number of seconds.
- * Each call restarts from the same start point (cumulative reveal).
+ * Streams Apple's 30-second preview for a song and plays a growing segment
+ * from the same start point (cumulative reveal: 1s, 2s, ... 6s).
  */
 export function useClipPlayer(): UseClipPlayerResult {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [missing, setMissing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) {
@@ -32,48 +35,65 @@ export function useClipPlayer(): UseClipPlayerResult {
     const audio = audioRef.current;
     if (audio) {
       audio.pause();
-      audio.currentTime = 0;
     }
     setIsPlaying(false);
   }, [clearTimer]);
 
   const play = useCallback(
-    (songId: string, seconds: number) => {
+    async (songId: string, seconds: number) => {
       clearTimer();
-      setMissing(false);
+      setUnavailable(false);
+      setIsLoading(true);
+
+      const song = SONG_BY_ID[songId];
+      const previewUrl = await getPreviewUrl(songId);
+
+      if (!previewUrl) {
+        setIsLoading(false);
+        setUnavailable(true);
+        return;
+      }
 
       let audio = audioRef.current;
       if (!audio) {
         audio = new Audio();
         audio.preload = 'auto';
+        audio.crossOrigin = 'anonymous';
         audioRef.current = audio;
       }
 
-      const url = clipUrl(songId);
-      if (audio.src !== url) {
-        audio.src = url;
+      if (audio.src !== previewUrl) {
+        audio.src = previewUrl;
       }
 
-      audio.onerror = () => {
-        setMissing(true);
-        setIsPlaying(false);
+      const startAt = song?.clipStart ?? 0;
+
+      const begin = () => {
+        audio!.currentTime = startAt;
+        const promise = audio!.play();
+        if (promise) {
+          promise.catch(() => {
+            setIsPlaying(false);
+          });
+        }
+        setIsLoading(false);
+        setIsPlaying(true);
+        timerRef.current = window.setTimeout(() => {
+          audio!.pause();
+          setIsPlaying(false);
+        }, seconds * 1000);
       };
 
-      audio.currentTime = 0;
-      const promise = audio.play();
-      if (promise) {
-        promise.catch(() => {
-          // Autoplay blocked or file missing; UI shows a Start button.
-          setIsPlaying(false);
-        });
+      // Wait until enough data is buffered to seek reliably.
+      if (audio.readyState >= 1) {
+        begin();
+      } else {
+        audio.onloadedmetadata = begin;
+        audio.onerror = () => {
+          setIsLoading(false);
+          setUnavailable(true);
+        };
       }
-
-      setIsPlaying(true);
-      timerRef.current = window.setTimeout(() => {
-        audio.pause();
-        audio.currentTime = 0;
-        setIsPlaying(false);
-      }, seconds * 1000);
     },
     [clearTimer],
   );
@@ -85,5 +105,5 @@ export function useClipPlayer(): UseClipPlayerResult {
     };
   }, [clearTimer]);
 
-  return { isPlaying, play, stop, missing };
+  return { isPlaying, isLoading, play, stop, unavailable };
 }

@@ -82,14 +82,18 @@ export default function App() {
           type="button"
           className="btn-primary w-full text-lg"
           onClick={handlePlay}
-          disabled={finished || player.isPlaying}
+          disabled={finished || player.isPlaying || player.isLoading}
         >
-          {player.isPlaying ? 'Çalıyor...' : `▶ ${seconds} saniye dinle`}
+          {player.isLoading
+            ? 'Yükleniyor...'
+            : player.isPlaying
+              ? 'Çalıyor...'
+              : `▶ ${seconds} saniye dinle`}
         </button>
 
-        {player.missing && (
+        {player.unavailable && (
           <p className="mt-3 rounded-lg bg-wrong/15 px-3 py-2 text-center text-xs text-wrong">
-            Klip dosyası bulunamadı. public/clips/{game.answerId}.mp3 ekleyin.
+            Bu şarkı için önizleme bulunamadı. İnternet bağlantını kontrol et.
           </p>
         )}
 

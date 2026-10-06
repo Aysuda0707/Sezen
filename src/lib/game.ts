@@ -105,9 +105,4 @@ export function applyResult(
   return next;
 }
 
-/** Clip URL for a song id. */
-export function clipUrl(songId: string): string {
-  return `${import.meta.env.BASE_URL}clips/${songId}.mp3`;
-}
-
 export type { GameMode };
