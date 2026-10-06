@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial,
+    sans-serif;
+  background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #0f172a 55%, #020617 100%);
+  color: #f8fafc;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5
+      font-semibold transition-colors focus:outline-none focus-visible:ring-2
+      focus-visible:ring-fuchsia-400 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-fuchsia-600 text-white hover:bg-fuchsia-500;
+  }
+  .btn-ghost {
+    @apply btn bg-white/10 text-slate-100 hover:bg-white/20;
+  }
+}
