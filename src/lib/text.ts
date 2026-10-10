@@ -28,6 +28,20 @@ const TURKISH_MAP: Record<string, string> = {
   û: 'u',
 };
 
+/**
+ * Keyboard-friendly aliases: Turkish letters that are missing from most
+ * non-Turkish keyboards can be typed with their ASCII equivalents.
+ * Applied AFTER folding, so e.g. "sh" -> "s" and "sezen" matches "şezen".
+ */
+const ALIAS_MAP: Array<[RegExp, string]> = [
+  [/sh/g, 's'], // ş typed as "sh"
+  [/ch/g, 'c'], // ç typed as "ch"
+  [/gh/g, 'g'], // ğ typed as "gh"
+  [/oe/g, 'o'], // ö typed as "oe"
+  [/ue/g, 'u'], // ü typed as "ue"
+  [/ss/g, 's'], // German-style ş
+];
+
 /** Normalise a string for comparison: fold Turkish chars, strip punctuation. */
 export function normalize(input: string): string {
   const folded = Array.from(input)
@@ -35,12 +49,19 @@ export function normalize(input: string): string {
     .join('')
     .toLowerCase();
 
-  return folded
+  let cleaned = folded
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // strip remaining diacritics
     .replace(/[^a-z0-9\s]/g, ' ') // punctuation -> space
     .replace(/\s+/g, ' ')
     .trim();
+
+  // Apply keyboard-friendly aliases so "sh" matches "ş", "ch" matches "ç", etc.
+  for (const [pattern, replacement] of ALIAS_MAP) {
+    cleaned = cleaned.replace(pattern, replacement);
+  }
+
+  return cleaned.replace(/\s+/g, ' ').trim();
 }
 
 /** Levenshtein edit distance between two strings. */

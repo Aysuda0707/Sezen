@@ -15,7 +15,7 @@ export default function App() {
   const player = useClipPlayer();
 
   const attemptIndex = game.guesses.length;
-  const seconds = revealSeconds(attemptIndex);
+  const seconds = revealSeconds(game.revealLevel);
   const finished = game.status !== 'playing';
 
   // Stop audio when the round ends or the mode changes.
@@ -27,6 +27,12 @@ export default function App() {
   const handlePlay = () => {
     if (finished) return;
     player.play(game.answerId, seconds);
+  };
+
+  const handleSkip = () => {
+    if (!game.canSkip) return;
+    player.stop();
+    game.skip();
   };
 
   const handleGuess = (song: Song) => {
@@ -43,7 +49,9 @@ export default function App() {
           Sezen Aksu <span className="text-fuchsia-400">Şarkı Tahmin</span>
         </h1>
         <p className="mt-1 text-sm text-slate-400">
-          Klibi dinle, şarkıyı tahmin et. 6 hakkın var.
+          Klibi dinle, şarkıyı tahmin et. 6 hakkın var. Emin değilsen{' '}
+          <span className="text-fuchsia-300">Atla</span> ile daha uzun klibi
+          açabilirsin.
         </p>
       </header>
 
@@ -78,18 +86,30 @@ export default function App() {
           </span>
         </div>
 
-        <button
-          type="button"
-          className="btn-primary w-full text-lg"
-          onClick={handlePlay}
-          disabled={finished || player.isPlaying || player.isLoading}
-        >
-          {player.isLoading
-            ? 'Yükleniyor...'
-            : player.isPlaying
-              ? 'Çalıyor...'
-              : `▶ ${seconds} saniye dinle`}
-        </button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <button
+            type="button"
+            className="btn-primary w-full text-lg"
+            onClick={handlePlay}
+            disabled={finished || player.isPlaying || player.isLoading}
+          >
+            {player.isLoading
+              ? 'Yükleniyor...'
+              : player.isPlaying
+                ? 'Çalıyor...'
+                : `▶ ${seconds} saniye dinle`}
+          </button>
+
+          <button
+            type="button"
+            className="btn-ghost w-full whitespace-nowrap sm:w-auto"
+            onClick={handleSkip}
+            disabled={!game.canSkip || player.isPlaying || player.isLoading}
+            title="Tahmin hakkını kullanmadan daha uzun klibi aç"
+          >
+            ⏭ Atla
+          </button>
+        </div>
 
         {player.unavailable && (
           <p className="mt-3 rounded-lg bg-wrong/15 px-3 py-2 text-center text-xs text-wrong">
