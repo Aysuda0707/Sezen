@@ -5,13 +5,14 @@ import type { Guess } from '../types';
 interface ShareButtonProps {
   guesses: Guess[];
   won: boolean;
+  skips?: number;
 }
 
-export function ShareButton({ guesses, won }: ShareButtonProps) {
+export function ShareButton({ guesses, won, skips = 0 }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
 
   const share = async () => {
-    const text = buildShareGrid(guesses, won);
+    const text = buildShareGrid(guesses, won, skips);
     try {
       if (navigator.share) {
         await navigator.share({ text });

@@ -8,6 +8,8 @@ export interface DailyRecord {
   date: string;
   guesses: Guess[];
   status: 'won' | 'lost';
+  /** Number of skipped turns used in this daily round. */
+  skips?: number;
 }
 
 function safeParse<T>(raw: string | null): T | null {

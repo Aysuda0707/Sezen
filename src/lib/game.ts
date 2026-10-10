@@ -54,15 +54,23 @@ export function evaluateGuess(guessId: string, answerId: string): Feedback {
   return 'wrong';
 }
 
-/** Build the emoji grid for sharing (daily mode). */
-export function buildShareGrid(guesses: Guess[], won: boolean): string {
+/**
+ * Build the emoji grid for sharing (daily mode).
+ * Skipped turns are shown as ⬜ so the row count matches the attempts used.
+ */
+export function buildShareGrid(
+  guesses: Guess[],
+  won: boolean,
+  skips = 0,
+): string {
   const emoji: Record<Feedback, string> = {
     correct: '🟩',
     partial: '🟨',
     wrong: '🟥',
   };
-  const rows = guesses.map((g) => emoji[g.feedback]).join('');
-  const score = won ? `${guesses.length}/${MAX_ATTEMPTS}` : `X/${MAX_ATTEMPTS}`;
+  const rows = guesses.map((g) => emoji[g.feedback]).join('') + '⬜'.repeat(skips);
+  const turns = guesses.length + skips;
+  const score = won ? `${turns}/${MAX_ATTEMPTS}` : `X/${MAX_ATTEMPTS}`;
   return `Sezen Aksu Şarkı Tahmin Oyunu ${todayKey()}\n${score}\n${rows}`;
 }
 

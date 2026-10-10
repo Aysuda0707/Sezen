@@ -14,7 +14,7 @@ export default function App() {
   const game = useGame(mode);
   const player = useClipPlayer();
 
-  const attemptIndex = game.guesses.length;
+  const attemptIndex = game.turnsUsed;
   const seconds = revealSeconds(game.revealLevel);
   const finished = game.status !== 'playing';
 
@@ -49,9 +49,9 @@ export default function App() {
           Sezen Aksu <span className="text-fuchsia-400">Şarkı Tahmin</span>
         </h1>
         <p className="mt-1 text-sm text-slate-400">
-          Klibi dinle, şarkıyı tahmin et. 6 hakkın var. Emin değilsen{' '}
-          <span className="text-fuchsia-300">Atla</span> ile daha uzun klibi
-          açabilirsin.
+          Klibi dinle, şarkıyı tahmin et. 6 hakkın var.{' '}
+          <span className="text-fuchsia-300">Atla</span> daha uzun klibi açar
+          ama bir hakkını harcar.
         </p>
       </header>
 
@@ -105,7 +105,7 @@ export default function App() {
             className="btn-ghost w-full whitespace-nowrap sm:w-auto"
             onClick={handleSkip}
             disabled={!game.canSkip || player.isPlaying || player.isLoading}
-            title="Tahmin hakkını kullanmadan daha uzun klibi aç"
+            title="Daha uzun klibi aç (1 hak harcar)"
           >
             ⏭ Atla
           </button>
@@ -146,6 +146,7 @@ export default function App() {
               <ShareButton
                 guesses={game.guesses}
                 won={game.status === 'won'}
+                skips={game.skips}
               />
             )}
             {mode === 'endless' && (
