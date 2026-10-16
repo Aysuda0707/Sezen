@@ -53,7 +53,13 @@ export default function App() {
 
   const handleGuess = (song: Song) => {
     player.stop();
-    game.submitGuess(song.id, song.title);
+    const guess = game.submitGuess(song.id, song.title);
+    // After a wrong (or same-album) guess, automatically play the next,
+    // longer clip so the player hears more without pressing play again.
+    if (guess && guess.feedback !== 'correct') {
+      const nextLevel = Math.min(game.turnsUsed + 1, MAX_ATTEMPTS - 1);
+      player.play(game.answerId, revealSeconds(nextLevel));
+    }
   };
 
   const answer = SONG_BY_ID[game.answerId];
