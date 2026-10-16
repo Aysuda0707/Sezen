@@ -61,9 +61,10 @@ export function evaluateGuess(guessId: string, answerId: string): Feedback {
  * Build the emoji grid for sharing (daily mode).
  *
  * Each turn is rendered in the exact order it was played: a skipped turn
- * becomes a gray square (⬜) at its real position, and a guess becomes a
+ * becomes a dark square (⬛) at its real position, and a guess becomes a
  * green/yellow/red square. Remaining unused attempts are padded with white
- * squares (⬜) so the grid always shows all six rows.
+ * squares (⬜) so the grid always shows all six rows and skips stay visually
+ * distinct from unused turns.
  */
 export function buildShareGrid(
   turns: Turn[],
@@ -76,7 +77,7 @@ export function buildShareGrid(
     wrong: '🟥',
   };
   const played = turns
-    .map((t) => (t.type === 'skip' ? '⬜' : emoji[t.guess.feedback]))
+    .map((t) => (t.type === 'skip' ? '⬛' : emoji[t.guess.feedback]))
     .join('');
   const remaining = Math.max(0, totalAttempts - turns.length);
   const rows = played + '⬜'.repeat(remaining);
