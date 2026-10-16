@@ -20,6 +20,15 @@ export interface Song {
 /** Feedback colour for a single guess. */
 export type Feedback = 'correct' | 'partial' | 'wrong';
 
+/**
+ * A single turn in the round timeline, in the exact order it was played.
+ * A skipped turn is recorded as `{ type: 'skip' }` so the shared grid can
+ * place a gray square at the right position instead of appending it at the end.
+ */
+export type Turn =
+  | { type: 'guess'; guess: Guess }
+  | { type: 'skip' };
+
 /** A single guess made by the player. */
 export interface Guess {
   /** The song the player selected from the catalog. */

@@ -1,4 +1,4 @@
-import type { Guess, Stats } from '../types';
+import type { Guess, Stats, Turn } from '../types';
 import { EMPTY_STATS } from './game';
 
 const STATS_KEY = 'sezen.stats.v1';
@@ -10,6 +10,11 @@ export interface DailyRecord {
   status: 'won' | 'lost';
   /** Number of skipped turns used in this daily round. */
   skips?: number;
+  /**
+   * Ordered timeline of every turn (guess or skip). Optional for backwards
+   * compatibility with records saved before this field existed.
+   */
+  turns?: Turn[];
 }
 
 function safeParse<T>(raw: string | null): T | null {

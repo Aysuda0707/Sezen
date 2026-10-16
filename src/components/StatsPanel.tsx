@@ -41,7 +41,7 @@ export function StatsPanel({ stats }: { stats: Stats }) {
               <span className="w-3 text-slate-400">{i + 1}</span>
               <div className="h-4 flex-1 rounded bg-white/5">
                 <div
-                  className="flex h-4 items-center justify-end rounded bg-fuchsia-600 px-1.5 font-semibold text-white"
+                  className="flex h-4 items-center justify-end rounded bg-accent-dark px-1.5 font-semibold text-white"
                   style={{ width: `${width}%` }}
                 >
                   {count}

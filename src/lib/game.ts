@@ -1,8 +1,11 @@
 import { SONGS, SONG_BY_ID } from '../data/songs';
-import type { Feedback, GameMode, Guess, Stats } from '../types';
+import type { Feedback, GameMode, Stats, Turn } from '../types';
 
 export const MAX_ATTEMPTS = 6;
 export const MAX_CLIP_SECONDS = 6;
+
+/** Public URL of the game, included in shared results. */
+export const GAME_URL = 'https://sezenel.app';
 
 /** Duration (seconds) revealed on a given 0-based attempt index. */
 export function revealSeconds(attemptIndex: number): number {
@@ -56,22 +59,36 @@ export function evaluateGuess(guessId: string, answerId: string): Feedback {
 
 /**
  * Build the emoji grid for sharing (daily mode).
- * Skipped turns are shown as ⬜ so the row count matches the attempts used.
+ *
+ * Each turn is rendered in the exact order it was played: a skipped turn
+ * becomes a gray square (⬜) at its real position, and a guess becomes a
+ * green/yellow/red square. Remaining unused attempts are padded with white
+ * squares (⬜) so the grid always shows all six rows.
  */
 export function buildShareGrid(
-  guesses: Guess[],
+  turns: Turn[],
   won: boolean,
-  skips = 0,
+  totalAttempts = MAX_ATTEMPTS,
 ): string {
   const emoji: Record<Feedback, string> = {
     correct: '🟩',
     partial: '🟨',
     wrong: '🟥',
   };
-  const rows = guesses.map((g) => emoji[g.feedback]).join('') + '⬜'.repeat(skips);
-  const turns = guesses.length + skips;
-  const score = won ? `${turns}/${MAX_ATTEMPTS}` : `X/${MAX_ATTEMPTS}`;
-  return `Sezen Aksu Şarkı Tahmin Oyunu ${todayKey()}\n${score}\n${rows}`;
+  const played = turns
+    .map((t) => (t.type === 'skip' ? '⬜' : emoji[t.guess.feedback]))
+    .join('');
+  const remaining = Math.max(0, totalAttempts - turns.length);
+  const rows = played + '⬜'.repeat(remaining);
+  const score = won ? `${turns.length}/${totalAttempts}` : `X/${totalAttempts}`;
+  return [
+    `Sezenel ${todayKey()}`,
+    score,
+    rows,
+    '',
+    'Sezenel oynadım, sen de dene! 🎵',
+    GAME_URL,
+  ].join('\n');
 }
 
 export const EMPTY_STATS: Stats = {

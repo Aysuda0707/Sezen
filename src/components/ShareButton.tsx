@@ -1,21 +1,20 @@
 import { useState } from 'react';
-import { buildShareGrid } from '../lib/game';
-import type { Guess } from '../types';
+import { GAME_URL, buildShareGrid } from '../lib/game';
+import type { Turn } from '../types';
 
 interface ShareButtonProps {
-  guesses: Guess[];
+  turns: Turn[];
   won: boolean;
-  skips?: number;
 }
 
-export function ShareButton({ guesses, won, skips = 0 }: ShareButtonProps) {
+export function ShareButton({ turns, won }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
 
   const share = async () => {
-    const text = buildShareGrid(guesses, won, skips);
+    const text = buildShareGrid(turns, won);
     try {
       if (navigator.share) {
-        await navigator.share({ text });
+        await navigator.share({ text, url: GAME_URL });
       } else {
         await navigator.clipboard.writeText(text);
       }

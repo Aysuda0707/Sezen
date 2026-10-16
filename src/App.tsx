@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { GuessInput } from './components/GuessInput';
 import { GuessList } from './components/GuessList';
-import { ShareButton } from './components/ShareButton';
+import { ResultModal } from './components/ResultModal';
 import { StatsPanel } from './components/StatsPanel';
 import { SONG_BY_ID } from './data/songs';
 import { useClipPlayer } from './hooks/useClipPlayer';
@@ -11,6 +11,7 @@ import type { GameMode, Song } from './types';
 
 export default function App() {
   const [mode, setMode] = useState<GameMode>('daily');
+  const [resultOpen, setResultOpen] = useState(false);
   const game = useGame(mode);
   const player = useClipPlayer();
 
@@ -24,6 +25,18 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, game.status]);
 
+  // Open the result modal automatically when the round finishes.
+  useEffect(() => {
+    if (finished) setResultOpen(true);
+  }, [finished]);
+
+  // Warm up the answer's audio as soon as the round starts so the very first
+  // play is instant (fixes the slow first-play / sub-second playback bug).
+  useEffect(() => {
+    if (!finished) player.preload(game.answerId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game.answerId, mode]);
+
   const handlePlay = () => {
     if (finished) return;
     player.play(game.answerId, seconds);
@@ -33,6 +46,9 @@ export default function App() {
     if (!game.canSkip) return;
     player.stop();
     game.skip();
+    // Play the newly revealed (longer) clip immediately after skipping.
+    const nextLevel = Math.min(game.turnsUsed + 1, MAX_ATTEMPTS - 1);
+    player.play(game.answerId, revealSeconds(nextLevel));
   };
 
   const handleGuess = (song: Song) => {
@@ -46,12 +62,12 @@ export default function App() {
     <div className="mx-auto flex min-h-full max-w-2xl flex-col gap-5 px-4 py-6">
       <header className="text-center">
         <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-          Sezen Aksu <span className="text-fuchsia-400">Şarkı Tahmin</span>
+          Sezen<span className="text-accent">el</span>
         </h1>
         <p className="mt-1 text-sm text-slate-400">
           Klibi dinle, şarkıyı tahmin et. 6 hakkın var.{' '}
-          <span className="text-fuchsia-300">Atla</span> daha uzun klibi açar
-          ama bir hakkını harcar.
+          <span className="text-accent">Atla</span> daha uzun klibi açar ama
+          bir hakkını harcar.
         </p>
       </header>
 
@@ -82,7 +98,7 @@ export default function App() {
             / {MAX_ATTEMPTS}
           </span>
           <span>
-            Klip süresi: <strong className="text-white">{seconds}s</strong>
+            Süre: <strong className="text-white">{seconds}s</strong>
           </span>
         </div>
 
@@ -126,40 +142,14 @@ export default function App() {
         </div>
       </section>
 
-      {finished && (
-        <section
-          className={`animate-pop-in rounded-2xl border p-5 text-center ${
-            game.status === 'won'
-              ? 'border-correct bg-correct/10'
-              : 'border-wrong bg-wrong/10'
-          }`}
+      {finished && !resultOpen && (
+        <button
+          type="button"
+          className="btn-ghost w-full"
+          onClick={() => setResultOpen(true)}
         >
-          <p className="text-lg font-bold text-white">
-            {game.status === 'won' ? '🎉 Bildin!' : '😔 Bilemedin'}
-          </p>
-          <p className="mt-1 text-slate-200">
-            Cevap: <strong>{answer?.title}</strong> — {answer?.album} (
-            {answer?.year})
-          </p>
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-            {mode === 'daily' && (
-              <ShareButton
-                guesses={game.guesses}
-                won={game.status === 'won'}
-                skips={game.skips}
-              />
-            )}
-            {mode === 'endless' && (
-              <button
-                type="button"
-                className="btn-primary w-full"
-                onClick={game.nextRound}
-              >
-                Sonraki Şarkı
-              </button>
-            )}
-          </div>
-        </section>
+          Sonucu göster
+        </button>
       )}
 
       <section className="rounded-2xl border border-white/10 bg-white/5 p-5">
@@ -179,6 +169,19 @@ export default function App() {
         </p>
         <p className="mt-1">Özel / eğitim amaçlı proje.</p>
       </footer>
+
+      <ResultModal
+        open={finished && resultOpen}
+        won={game.status === 'won'}
+        answer={answer}
+        mode={mode}
+        turns={game.turns}
+        onClose={() => setResultOpen(false)}
+        onNextRound={() => {
+          setResultOpen(false);
+          game.nextRound();
+        }}
+      />
     </div>
   );
 }
